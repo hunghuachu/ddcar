@@ -2,9 +2,13 @@ import requests
 import pymysql
 from collections import Counter
 from datetime import datetime
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
 
-brands = ['Tesla', 'Hyundai', 'Bmw', 'Lexus', 'Nissan', 'Skoda', 'Volvo',
-          'Toyota', 'Volkswagen', 'Ford', 'Hyundai', 'Jaguar', 'Kia', 'Mazda', 'Porsche']
+font_path = r'C:\Windows\Fonts\msjh.ttc' 
+
+brands = ['Tesla', 'Hyundai', 'Bmw', 'Lexus', 'Nissan', 'Skoda', 'Volvo', 'Luxgen', 'Mercedes-Benz',
+          'Toyota', 'Volkswagen', 'Ford', 'Hyundai', 'Jaguar', 'Kia', 'Mazda', 'Porsche', 'Audi']
 
 db = pymysql.connect(
     host='localhost',
@@ -24,7 +28,7 @@ def article_exists(title, posted_at):
     cursor.execute(sql, (title, posted_at))
     return cursor.fetchone()[0] > 0
 
-# 1. 自動分頁抓取直到沒資料
+# 抓取分頁 page 1 ~ 10
 max_page = 10
 for page in range(1, max_page + 1):
     url = f'https://www.ddcar.com.tw/api/web/news/categories/articles/list/?cateId=0&page={page}'
@@ -56,16 +60,18 @@ for page in range(1, max_page + 1):
 
     page += 1
 
-# 2. 從資料庫統計品牌提及數
+# 統計數量
 cursor.execute("SELECT title, content FROM news")
 all_texts = cursor.fetchall()
 
 brand_counter = Counter()
 for title, content in all_texts:
     text = (title or '') + ' ' + (content or '')
+    text_lower = text.lower()
     for brand in brands:
-        if brand.lower() in text.lower():
-            brand_counter[brand] += 1
+        brand_lower = brand.lower()
+        count = text_lower.count(brand_lower)
+        brand_counter[brand] += count
 
 print("\n品牌提及統計：")
 for brand, count in brand_counter.items():
@@ -73,3 +79,19 @@ for brand, count in brand_counter.items():
 
 cursor.close()
 db.close()
+
+
+brands_sorted = sorted(brand_counter.items(), key=lambda x: x[1], reverse=True)
+
+names = [b for b, c in brands_sorted]
+counts = [c for b, c in brands_sorted]
+
+font_prop = FontProperties(fname=font_path)
+plt.figure(figsize=(12, 6))
+plt.bar(names, counts, color='skyblue')
+plt.xlabel('品牌', fontproperties=font_prop)
+plt.ylabel('提及次數', fontproperties=font_prop)
+plt.title('品牌提及次數統計', fontproperties=font_prop)
+plt.xticks(rotation=45, fontproperties=font_prop)
+plt.tight_layout()
+plt.show()
