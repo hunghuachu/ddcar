@@ -29,7 +29,7 @@ def article_exists(title, posted_at):
     return cursor.fetchone()[0] > 0
 
 # 抓取分頁 page 1 ~ 10
-max_page = 10
+max_page = 50
 for page in range(1, max_page + 1):
     url = f'https://www.ddcar.com.tw/api/web/news/categories/articles/list/?cateId=0&page={page}'
     response = requests.get(url, headers=headers)
